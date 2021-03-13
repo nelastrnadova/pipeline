@@ -41,8 +41,8 @@ def main(ip="127.0.0.1", port=8000):
 def router(method: str, endpoint: str, body: json):
     if endpoint == "start_pipeline":
         return start_pipeline(method, body)
-    if endpoint == "get_pipeline":
-        return get_pipeline(method, body)
+    if endpoint == "get_pipeline_state":
+        return get_pipeline_state(method, body)
     return "", 404
 
 
@@ -56,7 +56,7 @@ def start_pipeline(method: str, body: json):
     return json.dumps({'pipeline_id': pipeline_id}), 202
 
 
-def get_pipeline(method: str, body: json):
+def get_pipeline_state(method: str, body: json):
     if not check_method("POST", method):
         return "", 405
     if 'pipeline_id' not in body:
