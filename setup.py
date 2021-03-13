@@ -39,4 +39,4 @@ for pipeline in yaml_json:
             component_id = db.single_select('components_master', ['id'], ['name', 'pipeline_fk'], [component, str(pipeline_id)])
             for component_dependency in component_json['dependencies']:
                 depends_on_id = db.single_select('components_master', ['id'], ['name', 'pipeline_fk'], [component_dependency, str(pipeline_id)])
-                db.insert('dependencies', ['component_fk', 'depends_on'], [component_id, 1])  # TODO: dependency
+                db.insert('dependencies', ['component_fk', 'depends_on'], [component_id, depends_on_id])
