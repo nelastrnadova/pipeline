@@ -18,21 +18,27 @@ yaml_json = Yaml(args.yaml).parse_as_json()
 for pipeline in yaml_json:
     pipeline_json = yaml_json[pipeline]
     pipeline_id = db.insert('pipelines_master', ['name', 'description'], [pipeline, pipeline_json['name']])
+
     if 'inputs' in pipeline_json:
         for pipeline_input in pipeline_json['inputs']:
             db.insert('pipeline_inputs_master', ['name', 'pipeline_master_fk'], [pipeline_input, pipeline_id])
+
     if 'outputs' in pipeline_json:
         for pipeline_output in pipeline_json['outputs']:
             db.insert('pipeline_outputs_master', ['name', 'pipeline_master_fk'], [pipeline_output, pipeline_id])
+
     for component in pipeline_json['components']:
         component_json = pipeline_json['components'][component]
         component_id = db.insert('components_master', ['name', 'runner', 'pipeline_fk'], [component, component_json['runner'], pipeline_id])
+
         if 'inputs' in component_json:
             for component_input in component_json['inputs']:
                 db.insert('component_inputs_master', ['name', 'component_master_fk'], [component_input, component_id])
+
         if 'outputs' in component_json:
             for component_output in component_json['outputs']:
                 db.insert('component_outputs_master', ['name', 'component_master_fk'], [component_output, component_id])
+
     for component in pipeline_json['components']:
         component_json = pipeline_json['components'][component]
         if 'dependencies' in component_json:
