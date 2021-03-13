@@ -61,3 +61,6 @@ class Database:
             f'DELETE from {table} WHERE {", ".join([field + " = ?" for field in where_fields])}',
             where_values,
         )
+
+    def exec(self, command: str):
+        self.cursor.execute(command)
