@@ -18,7 +18,10 @@ class Database:
         where_fields: [str] = None,
         where_values: list = None,
     ):
-        return self.select(table, to_select , where_fields, where_values)[0]
+        try:
+            return self.select(table, to_select, where_fields, where_values)[0]
+        except IndexError:
+            return None
 
     def select(
         self,
@@ -55,18 +58,22 @@ class Database:
                 f'UPDATE {table} SET {", ".join([field + " = ?" for field in set_fields])}',
                 set_values,
             )
+        self.conn.commit()
 
     def delete(self, table: str, where_fields: [str], where_values: list):
         self.cursor.execute(
             f'DELETE from {table} WHERE {", ".join([field + " = ?" for field in where_fields])}',
             where_values,
         )
+        self.conn.commit()
 
     def insert(self, table: str, columns: [str], values: list):
-        return self.cursor.execute(
+        self.cursor.execute(
             f"INSERT INTO {table} ({','.join(columns)}) VALUES ({', '.join(['?' for x in range(len(values))])})",
             values,
-        ).lastrowid
+        )
+        self.conn.commit()
+        return self.cursor.lastrowid
 
     def exec(self, command: str):
         self.cursor.execute(command)
