@@ -83,7 +83,6 @@ def get_pipeline_outputs(method: str, body: json):
     if 'pipeline_id' not in body:
         return "", 400
 
-    pipeline_master_id = db.single_select('pipelines', ['pipeline_master_fk'], ['id'], [body['pipeline_id']])[0]
     pipline_outputs_val_master_output_fk = db.select('pipeline_outputs', ['val', 'pipeline_output_master_fk'], ['pipeline_fk'], [body['pipeline_id']])
     to_return = {}
     for val_pomfk in pipline_outputs_val_master_output_fk:
