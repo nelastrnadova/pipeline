@@ -18,7 +18,7 @@ class Database:
         where_fields: [str] = None,
         where_values: list = None,
     ):
-        return self.select(table, to_select, where_values, where_fields)[0]
+        return self.select(table, to_select , where_fields, where_values)[0]
 
     def select(
         self,
@@ -29,7 +29,7 @@ class Database:
     ):
         if where_fields is not None:
             self.cursor.execute(
-                f"SELECT {', '.join(to_select)} FROM {table} WHERE {', '.join([field + ' = ?' for field in where_fields])}",
+                f"SELECT {', '.join(to_select)} FROM {table} WHERE {' AND '.join([field + ' = ?' for field in where_fields])}",
                 where_values,
             )
         else:
@@ -61,6 +61,12 @@ class Database:
             f'DELETE from {table} WHERE {", ".join([field + " = ?" for field in where_fields])}',
             where_values,
         )
+
+    def insert(self, table: str, columns: [str], values: list):
+        return self.cursor.execute(
+            f"INSERT INTO {table} ({','.join(columns)}) VALUES ({', '.join(['?' for x in range(len(values))])})",
+            values,
+        ).lastrowid
 
     def exec(self, command: str):
         self.cursor.execute(command)
