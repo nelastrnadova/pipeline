@@ -41,8 +41,10 @@ def main(ip="127.0.0.1", port=8000):
 def router(method: str, endpoint: str, body: json):
     if endpoint == "start_pipeline":
         return start_pipeline(method, body)
-    if endpoint == "get_pipeline_state":
+    elif endpoint == "get_pipeline_state":
         return get_pipeline_state(method, body)
+    elif endpoint == "get_pipeline_outputs":
+        return get_pipeline_outputs(method, body)
     return "", 404
 
 
@@ -53,7 +55,7 @@ def start_pipeline(method: str, body: json):
         return "", 400
 
     pipeline_master_id = db.single_select('pipelines_master', ['id'], ['name'], [body['pipeline']])[0]
-    pipeline_id = db.insert('pipelines', ['pipeline_master_fk'], [pipeline_master_id])[0]
+    pipeline_id = db.insert('pipelines', ['pipeline_master_fk'], [pipeline_master_id])
 
     return json.dumps({'pipeline_id': pipeline_id}), 202
 
@@ -73,6 +75,24 @@ def get_pipeline_state(method: str, body: json):
         state = 'finished TODO: get output'
 
     return json.dumps({'state': state}), 202
+
+
+def get_pipeline_outputs(method: str, body: json):
+    if not check_method("POST", method):
+        return "", 405
+    if 'pipeline_id' not in body:
+        return "", 400
+
+    pipeline_master_id = db.single_select('pipelines', ['pipeline_master_fk'], ['id'], [body['pipeline_id']])[0]
+    pipline_outputs_val_master_output_fk = db.select('pipeline_outputs', ['val', 'pipeline_output_master_fk'], ['pipeline_fk'], [body['pipeline_id']])
+    to_return = {}
+    for val_pomfk in pipline_outputs_val_master_output_fk:
+        val = val_pomfk[0]
+        pipeline_output_master_fk = val_pomfk[1]
+        name = db.single_select('pipeline_outputs_master', ['name'], ['id'], [pipeline_output_master_fk])[0]
+        to_return[name] = val
+
+    return json.dumps(to_return), 202
 
 
 def check_method(target_method: str, method: str) -> bool:
