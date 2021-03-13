@@ -3,4 +3,4 @@ class File:
         self.filename = filename
 
     def get_content(self):
-        return open(self.filename, 'r').read()
+        return open(self.filename, "r").read()
