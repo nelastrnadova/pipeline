@@ -51,8 +51,10 @@ def start_pipeline(method: str, body: json):
         return "", 405
     if 'pipeline' not in body:
         return "", 400
+
     pipeline_master_id = db.single_select('pipelines_master', ['id'], ['name'], [body['pipeline']])[0]
     pipeline_id = db.insert('pipelines', ['pipeline_master_fk'], [pipeline_master_id])[0]
+
     return json.dumps({'pipeline_id': pipeline_id}), 202
 
 
@@ -61,6 +63,7 @@ def get_pipeline_state(method: str, body: json):
         return "", 405
     if 'pipeline_id' not in body:
         return "", 400
+
     state = db.single_select('pipelines', ['state'], ['id'], [body['pipeline_id']])[0]
     if state == 0:
         state = 'waiting'
@@ -68,6 +71,7 @@ def get_pipeline_state(method: str, body: json):
         state = 'running'
     elif state == 2:
         state = 'finished TODO: get output'
+
     return json.dumps({'state': state}), 202
 
 
