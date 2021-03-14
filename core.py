@@ -123,7 +123,6 @@ class Core:
                 for output_id in output_return:
                     self.db.insert('pipeline_outputs', ['val', 'pipeline_fk', 'pipeline_output_master_fk'], [output_return[output_id], pipeline_id, output_id])
 
-                self.db.insert('pipeline_outputs', [''])
                 self.db.update('pipelines', ['state'], [2], ['id'], [pipeline_id])
 
 
