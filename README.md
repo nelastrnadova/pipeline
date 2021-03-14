@@ -27,28 +27,46 @@ output will be json with keys being your outputs supplied in input json and outp
 ## input json example:
 ```
 {
-    "test_pipeline": {
-        "name": "test pipeline",
-        "inputs": ["document_id", "page_num"],
-        "outputs": ["extractions"],
-        "components": {
-            "image_preprocessing": {
-                "runner": "test_data.ImagePreprocessing",
-                "inputs": ["document_id", "page_num"],
-                "outputs": ["page_id"],
-            },
-            "image_ocr": {
-                "runner": "test_data.OCRModel",
-                "inputs": ["image_preprocessing.page_id"],
-                "outputs": ["page_id"],
-            },
-            "extractor": {
-                "runner": "test_data.ExtractionModel",
-                "inputs": ["image_ocr.page_id"],
-                "outputs": ["extractions"],
-            },
-        },
-    }
+   "test_pipeline":{
+      "name":"test pipeline",
+      "inputs":[
+         "document_id",
+         "page_num"
+      ],
+      "outputs":[
+         "extractions"
+      ],
+      "components":{
+         "image_preprocessing":{
+            "runner":"test_data.ImagePreprocessing",
+            "inputs":[
+               "document_id",
+               "page_num"
+            ],
+            "outputs":[
+               "page_id"
+            ]
+         },
+         "image_ocr":{
+            "runner":"test_data.OCRModel",
+            "inputs":[
+               "image_preprocessing.page_id"
+            ],
+            "outputs":[
+               "page_id"
+            ]
+         },
+         "extractor":{
+            "runner":"test_data.ExtractionModel",
+            "inputs":[
+               "image_ocr.page_id"
+            ],
+            "outputs":[
+               "extractions"
+            ]
+         }
+      }
+   }
 }
 ```
 compontents can also include key 'dependencies' with names of components that must be finished in order fot the component to start running
