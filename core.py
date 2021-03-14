@@ -1,10 +1,3 @@
-# check components
-#   - if some have waiting, but have no depedency, run them
-#   - if some have waiting and depdendencies, test if dependencies have state finished and if yes, run component
-# check pipelines
-#   - if some have waiting, but the amount with state=running is less than max_allowed_running, run pipeline
-#   - if some have running, check their components. if all components have finished, set pipeline state to finished
-#   - if pipelie has running and its start - int(time.time()) is >= pipelines_master fk.max_runtime, set to error
 import time
 
 from database import Database
@@ -23,11 +16,18 @@ class Core:
             time.sleep(0.2)
 
     def run_component(self, component_id: int) -> None:
-        # get inputs, start component, set state to running, save output to component outputs, set state to finished
+        # TODO: get inputs, start component, set state to running, save output to component outputs, set state to finished
         pass
 
     def can_component_run(self, component_id: int) -> bool:
-        return False  # TODO
+        component_master_id, pipeline_id = self.db.single_select('components', ['component_master_fk', 'pipeline_fk'], ['id'], [component_id])
+        depends_on = self.db.select('dependencies', ['depends_on'], ['component_fk'], [component_master_id])
+        if not len(depends_on):
+            return True
+        for dependency in depends_on:
+            if self.db.single_select('components', ['state'], ['component_master_fk', 'pipeline_fk'], [dependency, pipeline_id])[0] != 2:
+                return False
+        return True
 
     def start_pipeline(self, pipeline_id: int) -> None:
         self.db.update('pipelines', ['state', 'start'], [1, int(time.time())], ['id'], [pipeline_id])
