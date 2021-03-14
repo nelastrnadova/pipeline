@@ -1,6 +1,7 @@
 import argparse
 import json
 import socket
+import time
 from json import JSONDecodeError
 
 from database import Database
@@ -55,7 +56,20 @@ def start_pipeline(method: str, body: json):
         return "", 400
 
     pipeline_master_id = db.single_select('pipelines_master', ['id'], ['name'], [body['pipeline']])[0]
+
+    inputs = {}
+    for input_master in db.select('pipeline_inputs_master', ['name', 'id'], ['pipeline_master_fk'], [pipeline_master_id]):
+        if input_master[0] not in body:
+            return '', 400
+        inputs[input_master[0]] = {'pipeline_input_master_id': input_master[1], 'value': body[input_master[0]]}
+
     pipeline_id = db.insert('pipelines', ['pipeline_master_fk'], [pipeline_master_id])
+
+    for pipeline_input in inputs:
+        db.insert('pipeline_inputs', ['val', 'pipeline_fk', 'pipeline_input_master_fk'], [inputs[pipeline_input]['value'], pipeline_id, inputs[pipeline_input]['pipeline_input_master_id']])
+
+    for component in db.select('components_master', ['id'], ['pipeline_master_fk'], [pipeline_master_id]):
+        db.insert('components', ['pipeline_fk', 'component_master_fk'], [pipeline_id, component[0]])
 
     return json.dumps({'pipeline_id': pipeline_id}), 202
 
@@ -72,7 +86,9 @@ def get_pipeline_state(method: str, body: json):
     elif state == 1:
         state = 'running'
     elif state == 2:
-        state = 'finished TODO: get output'
+        state = 'finished'
+    elif state == 3:
+        state = 'error/timeout'
 
     return json.dumps({'state': state}), 202
 
@@ -90,6 +106,10 @@ def get_pipeline_outputs(method: str, body: json):
         pipeline_output_master_fk = val_pomfk[1]
         name = db.single_select('pipeline_outputs_master', ['name'], ['id'], [pipeline_output_master_fk])[0]
         to_return[name] = val
+
+    #  TODO:
+    #  remove reference from pipelines, pipelines_inputs, pipeline_outputs,
+    #  components, components_input, components_outputs
 
     return json.dumps(to_return), 202
 
