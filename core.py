@@ -100,8 +100,31 @@ class Core:
             if self.is_any_pipeline_component_crashed(pipeline_id) or self.should_pipeline_timeout(pipeline_id):
                 self.db.update('pipelines', ['state'], [3], ['id'], [pipeline_id])
             elif self.are_pipeline_components_finished(pipeline_id):
+                pipeline_master_id = self.db.single_select('pipelines', ['pipeline_master_fk'], ['id'], [pipeline_id])[0]
+                output_names = [output_name[0] for output_name in self.db.select('pipeline_outputs_master', ['name'], ['pipeline_master_fk'], [pipeline_master_id])]
+                component_children_master_ids = [component_id[0] for component_id in self.db.select('components_master', ['id'], ['pipeline_master_fk'], [pipeline_master_id])]
+                component_outputs_master_ids_names = []
+                for component_children_master_id in component_children_master_ids:
+                    tmp = list(self.db.single_select('component_outputs_master', ['id', 'name'], ['component_master_fk'], [component_children_master_id]))
+                    tmp.append(component_children_master_id)
+                    component_outputs_master_ids_names.append(tmp)
+
+                output_return_preprocessed = {}
+                for output in output_names:
+                    for output_master in component_outputs_master_ids_names:
+                        if output == output_master[1]:
+                            component_id = self.db.single_select('components', ['id'], ['pipeline_fk', 'component_master_fk'], [pipeline_id, output_master[2]])[0]
+                            output_return_preprocessed[output] = self.db.single_select('component_outputs', ['val'], ['component_fk', 'component_output_master_fk'], [component_id, output_master[0]])[0]
+
+                output_return = {}
+                for output_name in output_return_preprocessed:
+                    output_return[self.db.single_select('pipeline_outputs_master', ['id'], ['name', 'pipeline_master_fk'], [output_name, pipeline_master_id])[0]] = output_return_preprocessed[output_name]
+
+                for output_id in output_return:
+                    self.db.insert('pipeline_outputs', ['val', 'pipeline_fk', 'pipeline_output_master_fk'], [output_return[output_id], pipeline_id, output_id])
+
+                self.db.insert('pipeline_outputs', [''])
                 self.db.update('pipelines', ['state'], [2], ['id'], [pipeline_id])
-                # TODO: set pipeline outputs
 
 
 if __name__ == '__main__':
