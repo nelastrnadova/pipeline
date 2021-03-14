@@ -29,10 +29,16 @@ for pipeline in yaml_json:
 
     for component in pipeline_json['components']:
         component_json = pipeline_json['components'][component]
-        component_id = db.insert('components_master', ['name', 'runner', 'pipeline_fk'], [component, component_json['runner'], pipeline_id])
+        component_id = db.insert('components_master', ['name', 'runner', 'pipeline_master_fk'], [component, component_json['runner'], pipeline_id])
 
         if 'inputs' in component_json:
             for component_input in component_json['inputs']:
+                if '.' in component_input:
+                    dep = component_input.split('.')[0]
+                    if 'dependencies' not in component_json:
+                        component_json['dependencies'] = []
+                    if dep not in component_json['dependencies']:
+                        component_json['dependencies'].append(dep)
                 db.insert('component_inputs_master', ['name', 'component_master_fk'], [component_input, component_id])
 
         if 'outputs' in component_json:
@@ -42,7 +48,7 @@ for pipeline in yaml_json:
     for component in pipeline_json['components']:
         component_json = pipeline_json['components'][component]
         if 'dependencies' in component_json:
-            component_id = db.single_select('components_master', ['id'], ['name', 'pipeline_fk'], [component, str(pipeline_id)])
+            component_id = db.single_select('components_master', ['id'], ['name', 'pipeline_master_fk'], [component, str(pipeline_id)])[0]
             for component_dependency in component_json['dependencies']:
-                depends_on_id = db.single_select('components_master', ['id'], ['name', 'pipeline_fk'], [component_dependency, str(pipeline_id)])
+                depends_on_id = db.single_select('components_master', ['id'], ['name', 'pipeline_master_fk'], [component_dependency, str(pipeline_id)])[0]
                 db.insert('dependencies', ['component_fk', 'depends_on'], [component_id, depends_on_id])
