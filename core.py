@@ -1,3 +1,4 @@
+import importlib
 import threading
 import time
 
@@ -24,15 +25,30 @@ class Core:
         inputs = {}
         for input_master_id, input_name in required_inputs:
             if '.' in input_name:
-                pass  # TODO: load inputs based on component outputs
+                component_name = input_name.split('.')[0]
+                input_name_processed = input_name.split('.')[1]
+                component_dependency_id_master = self.db.single_select('components_master', ['id'], ['name', 'pipeline_master_fk'], [component_name, pipeline_master_id])[0]
+                component_dependency_id = self.db.single_select('components', ['id'], ['pipeline_fk', 'component_master_fk'], [pipeline_id, component_dependency_id_master])[0]
+                component_dependency_output_id_master = self.db.single_select('component_outputs_master', ['id'], ['name', 'component_master_fk'], [input_name_processed, component_dependency_id_master])[0]
+                component_dependency_output_val = self.db.single_select('component_outputs', ['val'], ['component_fk', 'component_output_master_fk'], [component_dependency_id, component_dependency_output_id_master])[0]
+                inputs[input_name_processed] = component_dependency_output_val
             else:
                 pipeline_input_id = self.db.single_select('pipeline_inputs_master', ['id'], ['pipeline_master_fk', 'name'], [pipeline_master_id, input_name])[0]
                 val = self.db.single_select('pipeline_inputs', ['val'], ['pipeline_fk', 'pipeline_input_master_fk'], [pipeline_id, pipeline_input_id])[0]
                 inputs[input_name] = val
-        pass
 
-        # TODO: /get inputs/, start component, set state to running
-        # TODO: save output to component outputs, set state to finished
+        self.db.update('components', ['state'], [1], ['id'], [component_id])
+
+        runner = self.db.single_select('components_master', ['runner'], ['id'], [component_master_id])[0]
+        module = runner.split('.')[-1]  # TODO: error handling if invalid path (no dot in runner)
+        outputs = getattr(
+                    importlib.import_module(runner), module
+                )().exec(inputs)
+
+        for output in outputs:
+            component_output_master_id = self.db.single_select('component_outputs_master', ['id'], ['name', 'component_master_fk'], [output, component_master_id])[0]
+            self.db.insert('component_outputs', ['val', 'component_fk', 'component_output_master_fk'], [outputs[output], component_id, component_output_master_id])
+        self.db.update('components', ['state'], [2], ['id'], [component_id])  # TODO: check if all outputs filled. if not state 3
 
     def can_component_run(self, component_id: int) -> bool:
         component_master_id, pipeline_id = self.db.single_select('components', ['component_master_fk', 'pipeline_fk'], ['id'], [component_id])
