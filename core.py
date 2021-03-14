@@ -1,3 +1,4 @@
+import threading
 import time
 
 from database import Database
@@ -16,8 +17,22 @@ class Core:
             time.sleep(0.2)
 
     def run_component(self, component_id: int) -> None:
-        # TODO: get inputs, start component, set state to running, save output to component outputs, set state to finished
+        component_master_id, pipeline_id = self.db.single_select('components', ['component_master_fk', 'pipeline_fk'], ['id'], [component_id])
+        pipeline_master_id = self.db.single_select('pipelines', ['pipeline_master_fk'], ['id'], [pipeline_id])[0]
+        required_inputs = self.db.select('component_inputs_master', ['id', 'name'], ['component_master_fk'], [component_master_id])
+
+        inputs = {}
+        for input_master_id, input_name in required_inputs:
+            if '.' in input_name:
+                pass  # TODO: load inputs based on component outputs
+            else:
+                pipeline_input_id = self.db.single_select('pipeline_inputs_master', ['id'], ['pipeline_master_fk', 'name'], [pipeline_master_id, input_name])[0]
+                val = self.db.single_select('pipeline_inputs', ['val'], ['pipeline_fk', 'pipeline_input_master_fk'], [pipeline_id, pipeline_input_id])[0]
+                inputs[input_name] = val
         pass
+
+        # TODO: /get inputs/, start component, set state to running
+        # TODO: save output to component outputs, set state to finished
 
     def can_component_run(self, component_id: int) -> bool:
         component_master_id, pipeline_id = self.db.single_select('components', ['component_master_fk', 'pipeline_fk'], ['id'], [component_id])
@@ -25,7 +40,7 @@ class Core:
         if not len(depends_on):
             return True
         for dependency in depends_on:
-            if self.db.single_select('components', ['state'], ['component_master_fk', 'pipeline_fk'], [dependency, pipeline_id])[0] != 2:
+            if self.db.single_select('components', ['state'], ['component_master_fk', 'pipeline_fk'], [dependency[0], pipeline_id])[0] != 2:
                 return False
         return True
 
@@ -57,7 +72,7 @@ class Core:
         for component_waiting in self.db.select('components', ['id'], ['state'], [0]):
             component_id = component_waiting[0]
             if self.can_component_run(component_id):
-                self.run_component(component_id)  # async
+                threading.Thread(target=self.run_component, args=(component_id,)).run()
 
     def check_pipelines(self) -> None:
         for pipeline_waiting in self.db.select('pipelines', ['id'], ['state'], [0]):
