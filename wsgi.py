@@ -1,7 +1,6 @@
 import argparse
 import json
 import socket
-import time
 from json import JSONDecodeError
 
 from database import Database
