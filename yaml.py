@@ -11,17 +11,17 @@ class Yaml(File):
                 "outputs": ["extractions"],
                 "components": {
                     "image_preprocessing": {
-                        "runner": "ImagePreprocessing",
+                        "runner": "test_data.ImagePreprocessing",
                         "inputs": ["document_id", "page_num"],
                         "outputs": ["page_id"],
                     },
                     "image_ocr": {
-                        "runner": "OCRModel",
+                        "runner": "test_data.OCRModel",
                         "inputs": ["image_preprocessing.page_id"],
                         "outputs": ["page_id"],
                     },
                     "extractor": {
-                        "runner": "ExtractionModel",
+                        "runner": "test_data.ExtractionModel",
                         "inputs": ["image_ocr.page_id"],
                         "outputs": ["extractions"],
                     },
