@@ -5,6 +5,15 @@ Simple python program, that allows to create and run pipelines based on ~~yaml~~
 chmod +x start
 ./start path_to_input_json
 
+Make sure, that 'runner' key in component is its [PATH.FILE] and that it has exec method which accepts dict of its input parameters and outputs a dict of its output parameters.
+In the example below, component named image_preprocessing would have a file ImagePreprocessing in folder [pipeline_root]/test_data/. 
+Its code method in the simpelest form would look like this:
+```
+class ImagePreprocessing:
+    def exec(self, inputs):
+        return {'page_id': 8}
+```
+
 ## how to use
 call web server (default localhost:8000) end point /start_pipeline with post request and json body with key 'pipeline' and value - the name of pipeline you want to start and inputs as supplied in input json
 example:
